@@ -59,6 +59,26 @@ stdenv.mkDerivation (finalAttrs: {
     # Remove the incompatibility check that fails with Swift
     sed -i '/#  error "Unsupported combination of types for <tgmath.h>."/d' $out/sdk/usr/include/tgmath.h || true
 
+    # Copy libstdc++ headers so Swift's clang can find <algorithm>, <new>, etc.
+    if [ -d ${stdenv.cc.cc}/include/c++ ]; then
+      cp -r ${stdenv.cc.cc}/include/c++ $out/sdk/usr/include/
+    fi
+
+    # Expose GCC target-specific headers (bits/, include-fixed)
+    target=${stdenv.hostPlatform.config}
+    for gcclib in ${stdenv.cc.cc}/lib/gcc/$target/*; do
+      if [ -d "$gcclib" ]; then
+        dest=$out/sdk/usr/lib/gcc/$target/$(basename "$gcclib")
+        mkdir -p "$dest"
+        if [ -d "$gcclib/include" ]; then
+          cp -r "$gcclib/include" "$dest/"
+        fi
+        if [ -d "$gcclib/include-fixed" ]; then
+          cp -r "$gcclib/include-fixed" "$dest/"
+        fi
+      fi
+    done
+
     # Copy libraries and startup files
     # Copy actual shared libraries (dereferencing symlinks)
     for lib in ${pkgs.glibc}/lib/*.so.* ${pkgs.glibc}/lib/*.a ${pkgs.glibc}/lib/*.o; do

@@ -11,7 +11,7 @@ writeTextFile {
 
       pushd "''${swiftRoot:-.}"
       mkdir -p .build
-      cp -r "$swiftDeps" .build/
+      cp -rT "$swiftDeps" .build
       popd
     }
 
