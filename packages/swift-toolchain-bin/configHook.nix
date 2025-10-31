@@ -10,8 +10,19 @@ writeTextFile {
       fi
 
       pushd "''${swiftRoot:-.}"
-      mkdir -p .build
-      cp -rT "$swiftDeps" .build
+      local buildSrc="$swiftDeps/build"
+      local cacheSrc="$swiftDeps/cache"
+
+      if [ -d "$buildSrc" ]; then
+        rm -rf .build
+        mkdir -p .build
+        cp -rT "$buildSrc" .build
+      fi
+
+      if [ -d "$cacheSrc" ]; then
+        mkdir -p .cache
+        cp -rT "$cacheSrc" .cache
+      fi
       popd
     }
 
