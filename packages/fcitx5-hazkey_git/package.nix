@@ -6,6 +6,7 @@
   qttools,
   stdenv,
   lib,
+  python3,
   CMAKE_BUILD_TYPE ? "Release",
 }: let
   rev = "15b4c08ac2532d4384230324cc85d5c1ce354e99";
@@ -18,7 +19,7 @@
   };
   swiftDeps = swift-toolchain.fetchDeps {
     src = "${src}/hazkey-server";
-    hash = "sha256-EVw+evyziWcrDWnrD4NC44+zWFsHiuxNp2gp0wSAev0=";
+    hash = "sha256-AbjkWQb+NotF643YjLJainHoqqTAOcitNgXirlpu24I=";
   };
   swiftSdk = "${swift-toolchain}/sdk";
   cxxDirEntries = builtins.readDir "${swiftSdk}/usr/include/c++";
@@ -35,8 +36,6 @@
   gccVersion = lib.head gccVersionNames;
   gccInclude = "${gccLibDir}/${gccVersion}/include";
   gccIncludeFixed = "${gccLibDir}/${gccVersion}/include-fixed";
-  swiftExtraCxxTargetLine = if cxxTargetInclude == "" then "" else "    -Xcc -isystem -Xcc ${cxxTargetInclude}\n";
-  swiftCcIncludeLines = "    -Xcc --sysroot -Xcc ${swiftSdk}\n    -Xcc -isystem -Xcc ${cxxInclude}\n" + swiftExtraCxxTargetLine + "    -Xcc -isystem -Xcc ${gccInclude}\n    -Xcc -isystem -Xcc ${gccIncludeFixed}\n    -Xcc -isystem -Xcc ${swiftSdk}/usr/include";
   fhs = buildFHSEnvBubblewrap {
     name = "fcitx5-hazkey-dev";
     meta.mainProgram = "fcitx5-hazkey-dev";
@@ -85,10 +84,60 @@ in
     version = rev;
 
     src = src;
+    nativeBuildInputs = [ python3 ];
     buildPhase = ''
-      sed -i '/-Xswiftc -static-stdlib/d' hazkey-server/build_swift.cmake
-      substituteInPlace hazkey-server/build_swift.cmake \
-        --replace '    -Xlinker -L''${LLAMA_STUB_DIR}' '    -Xlinker -L''${LLAMA_STUB_DIR}\n${swiftCcIncludeLines}'
+      python3 - "$PWD/hazkey-server/build_swift.cmake" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+lines = [line for line in text.splitlines() if line.strip() != '-Xswiftc -static-stdlib']
+text = "\n".join(lines) + "\n"
+
+needle = '    -Xlinker -L''${LLAMA_STUB_DIR}'
+swift_sdk = "${swiftSdk}"
+cxx_include = "${cxxInclude}"
+cxx_target = "${cxxTargetInclude}"
+gcc_include = "${gccInclude}"
+gcc_include_fixed = "${gccIncludeFixed}"
+
+replacement_lines = [
+    '    -Xlinker -L''${LLAMA_STUB_DIR}',
+    '    -Xlinker -lllama',
+    f'    -Xcc --sysroot -Xcc {swift_sdk}',
+    f'    -Xcc -isystem -Xcc {cxx_include}',
+]
+
+if cxx_target:
+    replacement_lines.append(f'    -Xcc -isystem -Xcc {cxx_target}')
+
+replacement_lines.extend([
+    f'    -Xcc -isystem -Xcc {gcc_include}',
+    f'    -Xcc -isystem -Xcc {gcc_include_fixed}',
+    f'    -Xcc -isystem -Xcc {swift_sdk}/usr/include',
+])
+
+replacement = "\n".join(replacement_lines)
+
+if needle not in text:
+    raise SystemExit('failed to find LLAMA_STUB_DIR line in build_swift.cmake')
+
+text = text.replace(needle, replacement, 1)
+path.write_text(text)
+PY
+      python3 - "$PWD/hazkey-server/Package.swift" <<'PY'
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+needle = '                .unsafeFlags(["-L", "llama-stub"]),'
+extra = '                .unsafeFlags(["-Xlinker", "-lllama"]),'
+text = path.read_text()
+if extra not in text:
+    path.write_text(text.replace(needle, needle + "\n" + extra))
+PY
       mkdir -p /tmp/bind/src
       cp -r ./* /tmp/bind/src
 
@@ -101,6 +150,15 @@ in
         mkdir -p /tmp/bind/src/build
         cd /tmp/bind/src/build
         cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
+        ninja -t targets | grep llama || true
+        mkdir -p hazkey-server/llama-stub
+        ${swift-toolchain}/bin/clang -std=c11 -shared -fPIC \
+          --sysroot=${swift-toolchain}/sdk \
+          -I../hazkey-server/llama-stub \
+          -o hazkey-server/llama-stub/libllama.so \
+          ../hazkey-server/llama-stub/llama.c
+        ninja llama || ninja llama-stub || true
+        find /tmp/bind/src/build -maxdepth 4 -name "libllama*" -print || true
         export CC=${swift-toolchain}/bin/clang
         export CXX=${swift-toolchain}/bin/clang++
         export SDKROOT=${swift-toolchain}/sdk
