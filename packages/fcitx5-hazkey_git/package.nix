@@ -136,13 +136,20 @@ in
         mkdir -p hazkey-server/swift-build
         cp -r ${swiftDeps}/build/. hazkey-server/swift-build
         ninja
-        DESTDIR=/tmp/bind/out ninja install
       '
 
-      # Flatten the structure - move from /usr to root
-      mkdir -p $out
-      if [ -d /tmp/bind/out/usr ]; then
-        cp -r /tmp/bind/out/usr/* $out/
+      # Copy build artifacts directly without ninja install
+      mkdir -p $out/bin $out/lib/hazkey $out/lib/fcitx5 $out/share
+      cp /tmp/bind/src/build/hazkey-server/swift-build/release/hazkey-server $out/lib/hazkey/
+      cp /tmp/bind/src/build/hazkey-settings/hazkey-settings $out/lib/hazkey/
+      cp -r /tmp/bind/src/build/hazkey-server/llama-stub $out/lib/hazkey/
+      cp /tmp/bind/src/build/fcitx5-hazkey/src/fcitx5-hazkey.so $out/lib/fcitx5/
+      ln -s ../lib/hazkey/hazkey-server $out/bin/hazkey-server
+      ln -s ../lib/hazkey/hazkey-settings $out/bin/hazkey-settings
+
+      # Copy share data
+      if [ -d /tmp/bind/src/fcitx5-hazkey/share ]; then
+        cp -r /tmp/bind/src/fcitx5-hazkey/share/* $out/share/ 2>/dev/null || true
       fi
     '';
     dontInstall = true;
