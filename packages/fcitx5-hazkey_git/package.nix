@@ -20,12 +20,12 @@
   };
   swiftDeps = swift-toolchain.fetchDeps {
     src = "${src}/hazkey-server";
-    hash = "sha256-k2GqYArnKgSZ8PctxyeHk6cVYbbTnxap3wxj8es9R5A=";
+    hash = "sha256-Ms42VhkIk/3YvOSYP/r9O0n4+9dy6OD5Yk5T5nw1Paw=";
   };
   # Use Swift SDK package exposed by swift-toolchain
   swiftSdkPkg = swift-toolchain.sdk;
 
-  # Compute C++ include paths from Swift SDK for postPatch
+  # Compute C++ include paths from Swift SDK for clang++ wrapper
   swiftSdk = "${swift-toolchain}/sdk";
   cxxDirEntries = builtins.readDir "${swiftSdk}/usr/include/c++";
   cxxDirNames = lib.filter (name: cxxDirEntries.${name} == "directory") (builtins.attrNames cxxDirEntries);
