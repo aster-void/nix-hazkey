@@ -22,20 +22,14 @@
     src = "${src}/hazkey-server";
     hash = "sha256-k2GqYArnKgSZ8PctxyeHk6cVYbbTnxap3wxj8es9R5A=";
   };
-  # Compute C++ include paths from Swift SDK
+  # Use Swift SDK package exposed by swift-toolchain
+  swiftSdkPkg = swift-toolchain.sdk;
+
+  # Compute C++ include paths from Swift SDK for postPatch
   swiftSdk = "${swift-toolchain}/sdk";
   cxxDirEntries = builtins.readDir "${swiftSdk}/usr/include/c++";
   cxxDirNames = lib.filter (name: cxxDirEntries.${name} == "directory") (builtins.attrNames cxxDirEntries);
   cxxVersion = lib.head cxxDirNames;
-  cxxInclude = "${swiftSdk}/usr/include/c++/${cxxVersion}";
-  cxxTargetEntries = builtins.readDir cxxInclude;
-  cxxTargetDirs = lib.filter (name: cxxTargetEntries.${name} == "directory") (builtins.attrNames cxxTargetEntries);
-  cxxTargetDirName = lib.findFirst (name: name == stdenvNoCC.hostPlatform.config) "" cxxTargetDirs;
-  cxxTargetInclude = if cxxTargetDirName == "" then "" else "${cxxInclude}/${cxxTargetDirName}";
-  cxxFlags =
-    "--sysroot=${swiftSdk} -isystem ${cxxInclude}" +
-    lib.optionalString (cxxTargetInclude != "") " -isystem ${cxxTargetInclude}" +
-    " -isystem /usr/include";
   fhs = buildFHSEnvBubblewrap {
     name = "fcitx5-hazkey-dev";
     meta.mainProgram = "fcitx5-hazkey-dev";
@@ -44,7 +38,8 @@
       pkgs.git
       pkgs.cmake
       pkgs.ninja
-      swift-toolchain  # Provides clang/clang++ and SDK
+      swift-toolchain  # Provides clang/clang++
+      swiftSdkPkg      # Provides SDK (headers, libraries, crt*.o, libgcc)
       qtbase
       qtbase.dev
       qttools
@@ -72,22 +67,16 @@
       # Install Qt mkspecs
       ln -s ${qtbase}/mkspecs $out/usr/mkspecs
 
-      # Install Swift SDK into /usr so it's the default
-      mkdir -p $out/usr/include
-      ln -s ${swiftSdk}/usr/include/c++ $out/usr/include/c++
-
-      # Link Swift SDK libraries recursively into /usr/lib
-      cp -rs ${swiftSdk}/usr/lib/* $out/usr/lib/ 2>/dev/null || true
-
-      # Make clang wrapper scripts with sysroot in /usr/local/bin (higher priority)
+      # Make clang wrapper scripts with -B and -L to use SDK in /usr
+      # SDK is provided by swiftSdkPkg in targetPkgs
       mkdir -p $out/usr/local/bin
       cat > $out/usr/local/bin/clang << EOF
 #!/usr/bin/env bash
-exec ${swift-toolchain}/bin/clang --sysroot=${swiftSdk} "\$@"
+exec ${swift-toolchain}/bin/clang -B/usr/lib -L/usr/lib "\$@"
 EOF
       cat > $out/usr/local/bin/clang++ << EOF
 #!/usr/bin/env bash
-exec ${swift-toolchain}/bin/clang++ --sysroot=${swiftSdk} ${cxxFlags} "\$@"
+exec ${swift-toolchain}/bin/clang++ -B/usr/lib -L/usr/lib -isystem /usr/include/c++/${cxxVersion} "\$@"
 EOF
       chmod +x $out/usr/local/bin/clang $out/usr/local/bin/clang++
     '';
@@ -108,16 +97,12 @@ in
 
     src = src;
     postPatch = ''
-      # Patch Swift build to use correct sysroot and include paths
+      # Patch Swift build to link with llama
       substituteInPlace hazkey-server/build_swift.cmake \
         --replace-fail '-Xswiftc -static-stdlib' "" \
         --replace-fail '    -Xlinker -L''${LLAMA_STUB_DIR}' \
           '    -Xlinker -L''${LLAMA_STUB_DIR}
-        -Xlinker -lllama
-        -Xcc --sysroot -Xcc ${swiftSdk}
-        -Xcc -isystem -Xcc ${cxxInclude}${lib.optionalString (cxxTargetInclude != "") "
-        -Xcc -isystem -Xcc ${cxxTargetInclude}"}
-        -Xcc -isystem -Xcc ${swiftSdk}/usr/include'
+        -Xlinker -lllama'
 
       substituteInPlace hazkey-server/Package.swift \
         --replace-fail '.unsafeFlags(["-L", "llama-stub"]),' \

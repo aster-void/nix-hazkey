@@ -142,7 +142,21 @@ stdenv.mkDerivation (finalAttrs: {
     done
   '';
 
-  inherit passthru;
+  passthru = passthru // {
+    # Expose SDK as a separate package for use in FHS environments
+    sdk = stdenv.mkDerivation {
+      pname = "swift-sdk";
+      version = finalAttrs.version;
+      dontUnpack = true;
+      installPhase = ''
+        cp -r ${finalAttrs.finalPackage}/sdk/* $out/
+      '';
+      meta = {
+        description = "Swift SDK for Linux";
+      };
+    };
+  };
+
   meta = {
     mainProgram = "swift";
   };
