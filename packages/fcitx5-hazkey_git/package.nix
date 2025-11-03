@@ -18,7 +18,7 @@
   };
   swiftDeps = swift-toolchain.fetchDeps {
     src = "${src}/hazkey-server";
-    hash = "sha256-AbjkWQb+NotF643YjLJainHoqqTAOcitNgXirlpu24I=";
+    hash = "sha256-k2GqYArnKgSZ8PctxyeHk6cVYbbTnxap3wxj8es9R5A=";
   };
   # Compute C++ include paths from Swift SDK
   swiftSdk = "${swift-toolchain}/sdk";
@@ -37,28 +37,12 @@
   fhs = buildFHSEnvBubblewrap {
     name = "fcitx5-hazkey-dev";
     meta.mainProgram = "fcitx5-hazkey-dev";
-    profile = ''
-      export CMAKE_PREFIX_PATH="/usr"
-      export QT_ADDITIONAL_PACKAGES_PREFIX_PATHS="/usr"
-      export QT_HOST_PATH="/usr"
-      export Qt6LinguistTools_DIR="/usr/lib/cmake/Qt6LinguistTools"
-
-      # Set up Swift toolchain compiler environment
-      export CC=${swift-toolchain}/bin/clang
-      export CXX=${swift-toolchain}/bin/clang++
-      export SDKROOT=${swiftSdk}
-      export CFLAGS="--sysroot=$SDKROOT"
-      export CPPFLAGS="--sysroot=$SDKROOT"
-      export CXXFLAGS="${cxxFlags}"
-      export LIBRARY_PATH=${swiftSdk}/usr/lib
-      export LD_LIBRARY_PATH=$LIBRARY_PATH
-    '';
 
     targetPkgs = pkgs: [
       pkgs.git
       pkgs.cmake
       pkgs.ninja
-      pkgs.clang
+      swift-toolchain  # Provides clang/clang++ and SDK
       qtbase
       qtbase.dev
       qttools
@@ -70,7 +54,6 @@
       pkgs.protobufc
       pkgs.abseil-cpp
       pkgs.vulkan-loader
-      swift-toolchain
     ];
     extraArgs = [
       "--bind"
@@ -82,7 +65,7 @@
     extraBuildCommands = ''
       ln -s ${qtbase}/mkspecs $out/usr/mkspecs
       mkdir -p $out/usr/include
-      ln -s ${swift-toolchain}/sdk/usr/include/c++ $out/usr/include/c++
+      ln -s ${swiftSdk}/usr/include/c++ $out/usr/include/c++
     '';
   };
 in
@@ -122,10 +105,17 @@ in
 
         mkdir -p /tmp/bind/src/build
         cd /tmp/bind/src/build
+        CC=${swift-toolchain}/bin/clang \
+        CXX=${swift-toolchain}/bin/clang++ \
+        CFLAGS="--sysroot=${swiftSdk}" \
+        CPPFLAGS="--sysroot=${swiftSdk}" \
+        CXXFLAGS="${cxxFlags}" \
+        LIBRARY_PATH=${swiftSdk}/usr/lib \
+        LD_LIBRARY_PATH=${swiftSdk}/usr/lib \
         cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
         mkdir -p hazkey-server/llama-stub
-        $CC -std=c11 -shared -fPIC \
-          --sysroot=$SDKROOT \
+        ${swift-toolchain}/bin/clang -std=c11 -shared -fPIC \
+          --sysroot=${swiftSdk} \
           -I../hazkey-server/llama-stub \
           -o hazkey-server/llama-stub/libllama.so \
           ../hazkey-server/llama-stub/llama.c
