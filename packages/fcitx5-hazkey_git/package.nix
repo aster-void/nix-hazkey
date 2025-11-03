@@ -6,6 +6,8 @@
   qttools,
   stdenvNoCC,
   lib,
+  autoPatchelfHook,
+  protobuf,
   CMAKE_BUILD_TYPE ? "Release",
 }: let
   rev = "15b4c08ac2532d4384230324cc85d5c1ce354e99";
@@ -96,6 +98,14 @@ in
     pname = "fcitx5-hazkey";
     version = rev;
 
+    nativeBuildInputs = [autoPatchelfHook];
+    buildInputs = [
+      swift-toolchain
+      qtbase
+      qttools
+      protobuf
+    ];
+
     src = src;
     postPatch = ''
       # Patch Swift build to use correct sysroot and include paths
@@ -152,5 +162,17 @@ in
         cp -r /tmp/bind/src/fcitx5-hazkey/share/* $out/share/ 2>/dev/null || true
       fi
     '';
+
+    # Set up RPATH for autoPatchelfHook
+    postFixup = ''
+      # Add lib/hazkey to RPATH so hazkey-server can find libllama.so
+      patchelf --add-rpath '$ORIGIN/../lib/hazkey/llama-stub' $out/lib/hazkey/hazkey-server || true
+    '';
+
+    dontWrapQtApps = true;
     dontInstall = true;
+
+    meta = {
+      mainProgram = "hazkey-server";
+    };
   }
