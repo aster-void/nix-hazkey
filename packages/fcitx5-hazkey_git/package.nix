@@ -4,7 +4,7 @@
   fetchFromGitHub,
   qtbase,
   qttools,
-  stdenv,
+  stdenvNoCC,
   lib,
   CMAKE_BUILD_TYPE ? "Release",
 }: let
@@ -28,7 +28,7 @@
   cxxInclude = "${swiftSdk}/usr/include/c++/${cxxVersion}";
   cxxTargetEntries = builtins.readDir cxxInclude;
   cxxTargetDirs = lib.filter (name: cxxTargetEntries.${name} == "directory") (builtins.attrNames cxxTargetEntries);
-  cxxTargetDirName = lib.findFirst (name: name == stdenv.hostPlatform.config) "" cxxTargetDirs;
+  cxxTargetDirName = lib.findFirst (name: name == stdenvNoCC.hostPlatform.config) "" cxxTargetDirs;
   cxxTargetInclude = if cxxTargetDirName == "" then "" else "${cxxInclude}/${cxxTargetDirName}";
   cxxFlags =
     "--sysroot=${swiftSdk} -isystem ${cxxInclude}" +
@@ -62,14 +62,36 @@
     ];
 
     runScript = "bash";
+    profile = ''
+      # Put wrapper scripts in PATH before swift-toolchain's bin
+      export PATH="/usr/local/bin:$PATH"
+    '';
     extraBuildCommands = ''
+      # Install Qt mkspecs
       ln -s ${qtbase}/mkspecs $out/usr/mkspecs
+
+      # Install Swift SDK into /usr so it's the default
       mkdir -p $out/usr/include
       ln -s ${swiftSdk}/usr/include/c++ $out/usr/include/c++
+
+      # Link Swift SDK libraries recursively into /usr/lib
+      cp -rs ${swiftSdk}/usr/lib/* $out/usr/lib/ 2>/dev/null || true
+
+      # Make clang wrapper scripts with sysroot in /usr/local/bin (higher priority)
+      mkdir -p $out/usr/local/bin
+      cat > $out/usr/local/bin/clang << EOF
+#!/usr/bin/env bash
+exec ${swift-toolchain}/bin/clang --sysroot=${swiftSdk} "\$@"
+EOF
+      cat > $out/usr/local/bin/clang++ << EOF
+#!/usr/bin/env bash
+exec ${swift-toolchain}/bin/clang++ --sysroot=${swiftSdk} ${cxxFlags} "\$@"
+EOF
+      chmod +x $out/usr/local/bin/clang $out/usr/local/bin/clang++
     '';
   };
 in
-  stdenv.mkDerivation {
+  stdenvNoCC.mkDerivation {
     passthru.builder = fhs;
     pname = "fcitx5-hazkey";
     version = rev;
@@ -105,17 +127,9 @@ in
 
         mkdir -p /tmp/bind/src/build
         cd /tmp/bind/src/build
-        CC=${swift-toolchain}/bin/clang \
-        CXX=${swift-toolchain}/bin/clang++ \
-        CFLAGS="--sysroot=${swiftSdk}" \
-        CPPFLAGS="--sysroot=${swiftSdk}" \
-        CXXFLAGS="${cxxFlags}" \
-        LIBRARY_PATH=${swiftSdk}/usr/lib \
-        LD_LIBRARY_PATH=${swiftSdk}/usr/lib \
-        cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
+        cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
         mkdir -p hazkey-server/llama-stub
-        ${swift-toolchain}/bin/clang -std=c11 -shared -fPIC \
-          --sysroot=${swiftSdk} \
+        clang -std=c11 -shared -fPIC \
           -I../hazkey-server/llama-stub \
           -o hazkey-server/llama-stub/libllama.so \
           ../hazkey-server/llama-stub/llama.c
@@ -125,7 +139,11 @@ in
         DESTDIR=/tmp/bind/out ninja install
       '
 
-      cp -r /tmp/bind/out $out
+      # Flatten the structure - move from /usr to root
+      mkdir -p $out
+      if [ -d /tmp/bind/out/usr ]; then
+        cp -r /tmp/bind/out/usr/* $out/
+      fi
     '';
     dontInstall = true;
   }
