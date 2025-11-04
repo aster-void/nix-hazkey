@@ -66,7 +66,6 @@ in
     postPatch = ''
       # Patch Swift build to link with llama
       substituteInPlace hazkey-server/build_swift.cmake \
-        --replace-fail '-Xswiftc -static-stdlib' "" \
         --replace-fail '    -Xlinker -L''${LLAMA_STUB_DIR}' \
           '    -Xlinker -L''${LLAMA_STUB_DIR}
         -Xlinker -lllama'

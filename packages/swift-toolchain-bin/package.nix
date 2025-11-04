@@ -109,6 +109,16 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir -p $out/sdk/usr/lib/swift
     cp -r $out/lib/swift/linux $out/sdk/usr/lib/swift/
 
+    # Copy Swift static runtime for -static-stdlib support
+    if [ -d $out/lib/swift_static ]; then
+      mkdir -p $out/sdk/usr/lib/swift_static
+      cp -r $out/lib/swift_static/linux $out/sdk/usr/lib/swift_static/
+
+      # Swift's swift_static directory is missing the Cxx static libraries
+      # Copy them from the dynamic directory (they're actually static .a files)
+      cp $out/lib/swift/linux/libswiftCxx*.a $out/sdk/usr/lib/swift_static/linux/ 2>/dev/null || true
+    fi
+
     # Wrap Swift binaries to use the SDK (only executable files)
     for prog in $out/bin-unwrapped/*; do
       progname=$(basename "$prog")
