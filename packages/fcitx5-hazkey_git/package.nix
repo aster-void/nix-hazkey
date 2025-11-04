@@ -5,7 +5,6 @@
   qtbase,
   qttools,
   stdenvNoCC,
-  lib,
   autoPatchelfHook,
   protobuf,
   CMAKE_BUILD_TYPE ? "Release",
@@ -22,80 +21,48 @@
     src = "${src}/hazkey-server";
     hash = "sha256-Ms42VhkIk/3YvOSYP/r9O0n4+9dy6OD5Yk5T5nw1Paw=";
   };
-  # Use Swift SDK package exposed by swift-toolchain
-  swiftSdkPkg = swift-toolchain.sdk;
 
-  # Compute C++ include paths from Swift SDK for clang++ wrapper
-  swiftSdk = "${swift-toolchain}/sdk";
-  cxxDirEntries = builtins.readDir "${swiftSdk}/usr/include/c++";
-  cxxDirNames = lib.filter (name: cxxDirEntries.${name} == "directory") (builtins.attrNames cxxDirEntries);
-  cxxVersion = lib.head cxxDirNames;
+  # FHS environment to provide standard Linux filesystem layout
+  # This replicates the environment you get with: apt install build-essential cmake ninja-build
   fhs = buildFHSEnvBubblewrap {
-    name = "fcitx5-hazkey-dev";
-    meta.mainProgram = "fcitx5-hazkey-dev";
-
+    name = "fcitx5-hazkey-build";
     targetPkgs = pkgs: [
       pkgs.git
       pkgs.cmake
       pkgs.ninja
-      swift-toolchain  # Provides clang/clang++
-      swiftSdkPkg      # Provides SDK (headers, libraries, crt*.o, libgcc)
+      swift-toolchain
+      swift-toolchain.sdk
       qtbase
       qtbase.dev
       qttools
-      pkgs.libGL
-      pkgs.libGL.dev
       pkgs.fcitx5
       pkgs.gettext
       pkgs.protobuf
       pkgs.protobufc
       pkgs.abseil-cpp
+      pkgs.libGL
+      pkgs.libGL.dev
       pkgs.vulkan-loader
     ];
-    extraArgs = [
-      "--bind"
-      "/tmp/bind"
-      "/tmp/bind"
-    ];
-
     runScript = "bash";
     profile = ''
-      # Put wrapper scripts in PATH before swift-toolchain's bin
-      export PATH="/usr/local/bin:$PATH"
+      # Set up C++ include paths for standard clang++ usage
+      export CPLUS_INCLUDE_PATH="/usr/include/c++/14.3.0:/usr/include/c++/14.3.0/x86_64-unknown-linux-gnu"
     '';
     extraBuildCommands = ''
-      # Install Qt mkspecs
+      # Install Qt mkspecs for Qt6
       ln -s ${qtbase}/mkspecs $out/usr/mkspecs
-
-      # Make clang wrapper scripts with -B and -L to use SDK in /usr
-      # SDK is provided by swiftSdkPkg in targetPkgs
-      mkdir -p $out/usr/local/bin
-      cat > $out/usr/local/bin/clang << EOF
-#!/usr/bin/env bash
-exec ${swift-toolchain}/bin/clang -B/usr/lib -L/usr/lib "\$@"
-EOF
-      cat > $out/usr/local/bin/clang++ << EOF
-#!/usr/bin/env bash
-exec ${swift-toolchain}/bin/clang++ -B/usr/lib -L/usr/lib -isystem /usr/include/c++/${cxxVersion} "\$@"
-EOF
-      chmod +x $out/usr/local/bin/clang $out/usr/local/bin/clang++
     '';
   };
 in
   stdenvNoCC.mkDerivation {
-    passthru.builder = fhs;
     pname = "fcitx5-hazkey";
     version = rev;
+    inherit src;
 
     nativeBuildInputs = [autoPatchelfHook];
-    buildInputs = [
-      swift-toolchain
-      qtbase
-      qttools
-      protobuf
-    ];
+    buildInputs = [swift-toolchain qtbase qttools protobuf];
 
-    src = src;
     postPatch = ''
       # Patch Swift build to link with llama
       substituteInPlace hazkey-server/build_swift.cmake \
@@ -109,53 +76,75 @@ in
           '.unsafeFlags(["-L", "llama-stub"]),
                 .unsafeFlags(["-Xlinker", "-lllama"]),'
     '';
-    buildPhase = ''
-      mkdir -p /tmp/bind/src
-      cp -r ./* /tmp/bind/src
 
-      ${fhs}/bin/fcitx5-hazkey-dev -euc '
+    # Build using standard commands inside FHS environment
+    buildPhase = ''
+      runHook preBuild
+
+      # Set up temporary directory for build
+      export BUILDDIR=$(mktemp -d)
+      cp -r . $BUILDDIR/src
+      cd $BUILDDIR/src
+
+      # Run the standard build commands inside FHS environment
+      ${fhs}/bin/fcitx5-hazkey-build << 'BUILD_SCRIPT'
         set -euo pipefail
-        export HOME=/tmp/bind/home
+
+        # Set up Swift cache
+        export HOME=$PWD/home
         mkdir -p "$HOME/.cache"
         cp -r ${swiftDeps}/cache/. "$HOME/.cache"
         export XDG_CACHE_HOME="$HOME/.cache"
 
-        mkdir -p /tmp/bind/src/build
-        cd /tmp/bind/src/build
-        cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
+        # Standard build commands - exactly like the upstream instructions
+        mkdir build && cd build
+        cmake -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=/usr -G Ninja ..
+
+        # Build llama stub
         mkdir -p hazkey-server/llama-stub
         clang -std=c11 -shared -fPIC \
           -I../hazkey-server/llama-stub \
           -o hazkey-server/llama-stub/libllama.so \
           ../hazkey-server/llama-stub/llama.c
+
+        # Set up Swift build with cached dependencies
         mkdir -p hazkey-server/swift-build
         cp -r ${swiftDeps}/build/. hazkey-server/swift-build
-        ninja
-      '
 
-      # Copy build artifacts directly without ninja install
-      mkdir -p $out/bin $out/lib/hazkey $out/lib/fcitx5 $out/share
-      cp /tmp/bind/src/build/hazkey-server/swift-build/release/hazkey-server $out/lib/hazkey/
-      cp /tmp/bind/src/build/hazkey-settings/hazkey-settings $out/lib/hazkey/
-      cp -r /tmp/bind/src/build/hazkey-server/llama-stub $out/lib/hazkey/
-      cp /tmp/bind/src/build/fcitx5-hazkey/src/fcitx5-hazkey.so $out/lib/fcitx5/
+        ninja
+BUILD_SCRIPT
+
+      # Copy artifacts to output
+      BUILD=$BUILDDIR/src/build
+
+      # Install binaries
+      install -Dm755 $BUILD/hazkey-server/swift-build/release/hazkey-server $out/lib/hazkey/hazkey-server
+      install -Dm755 $BUILD/hazkey-settings/hazkey-settings $out/lib/hazkey/hazkey-settings
+
+      # Install libraries
+      install -Dm644 $BUILD/fcitx5-hazkey/src/fcitx5-hazkey.so $out/lib/fcitx5/fcitx5-hazkey.so
+      cp -r $BUILD/hazkey-server/llama-stub $out/lib/hazkey/
+
+      # Create symlinks
+      mkdir -p $out/bin
       ln -s ../lib/hazkey/hazkey-server $out/bin/hazkey-server
       ln -s ../lib/hazkey/hazkey-settings $out/bin/hazkey-settings
 
-      # Copy share data
-      if [ -d /tmp/bind/src/fcitx5-hazkey/share ]; then
-        cp -r /tmp/bind/src/fcitx5-hazkey/share/* $out/share/ 2>/dev/null || true
+      # Copy share data if it exists
+      if [ -d $BUILDDIR/src/fcitx5-hazkey/share ]; then
+        cp -r $BUILDDIR/src/fcitx5-hazkey/share/. $out/share/
       fi
-    '';
 
-    # Set up RPATH for autoPatchelfHook
-    postFixup = ''
-      # Add lib/hazkey to RPATH so hazkey-server can find libllama.so
-      patchelf --add-rpath '$ORIGIN/../lib/hazkey/llama-stub' $out/lib/hazkey/hazkey-server || true
+      runHook postBuild
     '';
 
     dontWrapQtApps = true;
     dontInstall = true;
+
+    postFixup = ''
+      # Add lib/hazkey to RPATH so hazkey-server can find libllama.so
+      patchelf --add-rpath '$ORIGIN/../lib/hazkey/llama-stub' $out/lib/hazkey/hazkey-server || true
+    '';
 
     meta = {
       mainProgram = "hazkey-server";
