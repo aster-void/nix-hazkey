@@ -1,5 +1,5 @@
 {
-  description = "Simple flake with a devshell";
+  description = "fcitx5-hazkey packaged for NixOS";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
