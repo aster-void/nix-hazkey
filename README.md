@@ -2,11 +2,7 @@
 
 ## 使い方
 
-### 1. インストール
-
-NixOS の場合:
-
-`flake.nix` の `inputs` に追加し、モジュールを読み込んで有効化します。
+### 1. flake を `inputs` に追加
 
 ```nix
 # flake.nix
@@ -18,6 +14,7 @@ NixOS の場合:
       modules = [
         {
           _module.args = {
+            # この行を追加
             inherit inputs;
           };
         }
@@ -28,41 +25,46 @@ NixOS の場合:
 }
 ```
 
+### 2. インストール
+
+A. All-in-one (推奨)
+
 ```nix
-# configuration.nix
+# configuration.nix / home.nix
 {inputs, pkgs, ...}: let
   inherit (pkgs.stdenv) system;
 in {
-  imports = [
-    inputs.nix-hazkey.nixosModules.hazkey
-  ];
-
-  services.hazkey.enable = true;
-
-  # `services.hazkey` と同じ module system (NixOS/HM) である必要はありません
+  # `i18n.inputMethod` と同じマネージャー (NixOS or Home Manager) で
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
-    fcitx5.addons = [
-      inputs.nix-hazkey.packages.${system}.fcitx5-hazkey
-    ];
   };
+
+  # home-manager の場合は `inputs.nix-hazkey.homeModules.hazkey` を使用
+  imports = [ inputs.nix-hazkey.nixosModules.hazkey ];
+  services.hazkey.enable = true;
 }
 ```
 
-Home Manager:
-
-Home Manager でも同様にモジュールを読み込み、有効化します。
+B. Manual installation
 
 ```nix
-# home.nix
+# configuration.nix / home.nix
 { config, pkgs, inputs, ... }:
 {
+  # 1. hazkey-server の有効化
   imports = [ inputs.nix-hazkey.homeModules.hazkey ];
+  services.hazkey = {
+    enable = true;
+    # 自動インストールの無効化
+    installHazkeySettings = false;
+    installFcitx5Addon = false;
+  };
 
-  services.hazkey.enable = true;
+  # 2. hazkey-settings のインストール
+  environment.systemPackages = [inputs.nix-hazkey.nixosModules.hazkey-settings];
 
-  # `services.hazkey` と同じ module system (NixOS/HM) である必要はありません
+  # 3. fcitx5 の設定
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
@@ -73,7 +75,7 @@ Home Manager でも同様にモジュールを読み込み、有効化します�
 }
 ```
 
-設定を適用すると `hazkey-server` がユーザーサービスとして起動します。
+設定を適用すると `hazkey-server` が systemd ユーザーサービスとして起動します。
 
 ### 2. 有効化
 

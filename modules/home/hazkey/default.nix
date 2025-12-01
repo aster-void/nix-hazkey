@@ -4,17 +4,20 @@
   config,
   ...
 }: let
-  cfg = config.services.hazkey;
+  inherit (pkgs.stdenv) system;
   mkOptions = import ../../../internal/mkOptions.nix;
+  cfg = config.services.hazkey;
 in {
   _class = "homeManager";
 
   options.services.hazkey = mkOptions {inherit pkgs flake;};
 
   config = lib.mkIf cfg.enable (let
-    # Override hazkey-server with the libllama specified by the module option
-    serverPkg = cfg.server.package.override { libllama = cfg.libllama.package; };
+    pkg = cfg.server.package.override {libllama = cfg.libllama.package;};
   in {
+    home.packages = lib.optional cfg.installHazkeySettings flake.packages.${system}.hazkey-settings;
+    i18n.inputMethod.fcitx5.addons = lib.optional cfg.installFcitx5Addon flake.packages.${system}.fcitx5-hazkey;
+
     systemd.user.services.hazkey-server = {
       Unit = {
         Description = "Hazkey server";
@@ -22,7 +25,7 @@ in {
         PartOf = ["graphical-session.target"];
       };
       Service = {
-        ExecStart = "${lib.getExe serverPkg}";
+        ExecStart = "${lib.getExe pkg}";
         Restart = "on-failure";
         Environment = [
           "HAZKEY_DICTIONARY=${cfg.dictionary.package}${cfg.dictionary.path}"

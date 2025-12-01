@@ -6,6 +6,16 @@
   self = flake.packages.${pkgs.stdenv.system};
 in {
   enable = lib.mkEnableOption "Hazkey server";
+  installHazkeySettings = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "Install program hazkey-settings";
+  };
+  installFcitx5Addon = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "Install fcitx5 addon fcitx5-hazkey";
+  };
 
   server.package = lib.mkOption {
     type = lib.types.package;
