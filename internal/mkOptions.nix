@@ -47,7 +47,7 @@ in {
 
   zenzai.package = lib.mkOption {
     type = lib.types.package;
-    default = self.zenzai;
+    default = self.zenzai_v3_1-small;
     description = "Package providing zenzai.gguf";
   };
   zenzai.path = lib.mkOption {

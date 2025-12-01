@@ -1,6 +1,6 @@
 # nix-hazkey
 
-## 使い方
+## Installation
 
 ### 1. flake を `inputs` に追加
 
@@ -77,7 +77,7 @@ B. Manual installation
 
 設定を適用すると `hazkey-server` が systemd ユーザーサービスとして起動します。
 
-### 2. 有効化
+### 3. 有効化
 
 fcitx5 の設定で有効化します。
 
@@ -85,7 +85,7 @@ fcitx5 の設定で有効化します。
 fcitx5-configtool
 ```
 
-### 3. 設定
+### 4. 設定
 
 hazkey の設定を開きます。 Zenzai の設定がオフになっている場合は、有効化します。
 
@@ -93,23 +93,26 @@ hazkey の設定を開きます。 Zenzai の設定がオフになっている�
 hazkey-settings
 ```
 
-## 設定
+## Configuration
 
 ```nix
-# services.hazkey の最小設定例（NixOS/HM 共通）
-# - `system` は通常 `inherit (pkgs.stdenv) system;` から取得します
-# - `inputs` は flake の inputs を参照します
-services.hazkey = {
-  enable = true;
+{inputs, pkgs, ...}: let
+  inherit (pkgs.stdenv) system;
+in {
+  services.hazkey = {
+    enable = true;
 
-  # llama backend
-  # - 既定: libllama-cpu
-  # - GPU(Vulkan) を使う場合: libllama-vulkan
-  libllama.package = inputs.nix-hazkey.packages.${system}.libllama-vulkan;
+    # llama backend
+    # - libllama-cpu - CPU [デフォルト]
+    # - libllama-vulkan - GPU (Vulkan)
+    libllama.package = inputs.nix-hazkey.packages.${system}.libllama-vulkan;
 
-  # zenzai model
-  # - 既定: zenzai (v3.1 small)
-  # - 他: zenzai_v3_1_xsmall, zenzai_v2 など
-  zenzai.package = inputs.nix-hazkey.packages.${system}.zenzai_v3_1_xsmall;
-};
+    # zenzai model
+    # - zenzai_v3_1-small [デフォルト]
+    # - zenzai_v3_1-xsmall
+    # - zenzai_v3-small
+    # - zenzai_v2
+    zenzai.package = inputs.nix-hazkey.packages.${system}.zenzai_v3_1-xsmall;
+  };
+}
 ```
