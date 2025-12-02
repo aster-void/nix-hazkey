@@ -29,6 +29,7 @@ nix-hazkey は fcitx5-hazkey を NixOS/Home Manager でパッケージングし�
 - `services.hazkey.installFcitx5Addon`: fcitx5 アドオンのインストール（デフォルト: true）
 
 環境変数でパスを渡す仕組み：
+
 - `HAZKEY_DICTIONARY`: 辞書パス
 - `HAZKEY_ZENZAI_MODEL`: AI モデルパス
 - `LIBLLAMA_PATH`: libllama.so のパス
