@@ -1,20 +1,18 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  callPackage,
   autoPatchelfHook,
   qt6,
   ...
 }:
-stdenv.mkDerivation rec {
+  let
+    upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
+  in
+stdenv.mkDerivation (finalAttrs: {
   pname = "hazkey-settings";
-  version = "0.2.0";
-
-  src = fetchzip {
-    url = "https://github.com/7ka-Hiira/fcitx5-hazkey/releases/download/${version}/fcitx5-hazkey-${version}-x86_64.tar.gz";
-    hash = "sha256-agpqU8uVpmGJEnqQPsZBv3uSOw9pD0iri3/R/hRAACA=";
-    stripRoot = false;
-  };
+  src = upstream;
+  inherit (upstream) version;
 
   nativeBuildInputs = [autoPatchelfHook qt6.wrapQtAppsHook];
 
@@ -40,9 +38,10 @@ stdenv.mkDerivation rec {
     runHook preInstall
 
     mkdir -p $out/lib/hazkey $out/bin $out/share/applications
-    cp usr/lib/hazkey/hazkey-settings $out/lib/hazkey/
-    ln -s ../lib/hazkey/hazkey-settings $out/bin/hazkey-settings
+
+    cp usr/lib/hazkey/hazkey-settings $out/bin/hazkey-settings
     cp usr/share/applications/hazkey-settings.desktop $out/share/applications/
+    cp -r usr/share/icons $out/share/
 
     runHook postInstall
   '';
@@ -55,4 +54,4 @@ stdenv.mkDerivation rec {
     platforms = ["x86_64-linux"];
     mainProgram = "hazkey-settings";
   };
-}
+})

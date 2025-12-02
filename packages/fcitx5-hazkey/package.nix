@@ -1,20 +1,18 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  callPackage,
   autoPatchelfHook,
   fcitx5,
   ...
 }:
-stdenv.mkDerivation rec {
+  let
+    upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
+  in
+stdenv.mkDerivation (finalAttrs: {
   pname = "fcitx5-hazkey";
-  version = "0.2.0";
-
-  src = fetchzip {
-    url = "https://github.com/7ka-Hiira/fcitx5-hazkey/releases/download/${version}/fcitx5-hazkey-${version}-x86_64.tar.gz";
-    hash = "sha256-agpqU8uVpmGJEnqQPsZBv3uSOw9pD0iri3/R/hRAACA=";
-    stripRoot = false;
-  };
+  src = upstream;
+  inherit (upstream) version;
 
   nativeBuildInputs = [autoPatchelfHook];
 
@@ -36,14 +34,18 @@ stdenv.mkDerivation rec {
   installPhase = ''
     runHook preInstall
 
-      mkdir -p $out/lib/fcitx5 $out/share/fcitx5/addon $out/share/fcitx5/inputmethod $out/share/hazkey $out/share/metainfo
-
-    # Copy only addon-related files (A/B/C)
+    mkdir -p $out/lib/fcitx5 $out/share/metainfo $out/share/icons $out/share/hazkey $out/share/locale
+    
+    # copy lib/
     cp usr/lib/fcitx5/fcitx5-hazkey.so $out/lib/fcitx5/
-    cp usr/share/fcitx5/addon/hazkey.conf $out/share/fcitx5/addon/
-    cp usr/share/fcitx5/inputmethod/hazkey.conf $out/share/fcitx5/inputmethod/
+
+    # copy share/
+    cp -r usr/share/fcitx5/ $out/share/
     cp usr/share/metainfo/org.fcitx.Fcitx5.Addon.Hazkey.metainfo.xml $out/share/metainfo/
-    # Keep only emoji list, drop bundled Dictionary to split packaging
+    cp -r usr/share/icons/* $out/share/icons
+    cp -r usr/share/locale/* $out/share/locale
+
+    # Keep only emoji list, drop bundled Dictionary into another (packages/dictionary)
     cp -r usr/share/hazkey/emoji_all_E16.0.txt $out/share/hazkey/
 
     runHook postInstall
@@ -56,4 +58,4 @@ stdenv.mkDerivation rec {
     maintainers = [];
     platforms = ["x86_64-linux"];
   };
-}
+})

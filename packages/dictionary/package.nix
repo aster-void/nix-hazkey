@@ -1,18 +1,16 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  callPackage,
   ...
 }:
-stdenv.mkDerivation rec {
+  let
+    upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
+  in
+stdenv.mkDerivation (finalAttrs: {
   pname = "hazkey-dictionary";
-  version = "0.2.0";
-
-  src = fetchzip {
-    url = "https://github.com/7ka-Hiira/fcitx5-hazkey/releases/download/${version}/fcitx5-hazkey-${version}-x86_64.tar.gz";
-    hash = "sha256-agpqU8uVpmGJEnqQPsZBv3uSOw9pD0iri3/R/hRAACA=";
-    stripRoot = false;
-  };
+  src = upstream;
+  inherit (upstream) version;
 
   dontBuild = true;
 
@@ -20,7 +18,6 @@ stdenv.mkDerivation rec {
     runHook preInstall
 
     mkdir -p $out/share/hazkey/Dictionary
-    # The archive contains directories (cb, louds, p); copy recursively
     cp -r usr/share/hazkey/Dictionary/* $out/share/hazkey/Dictionary/
 
     runHook postInstall
@@ -32,4 +29,4 @@ stdenv.mkDerivation rec {
     maintainers = [];
     platforms = platforms.all;
   };
-}
+})

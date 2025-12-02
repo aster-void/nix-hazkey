@@ -1,19 +1,17 @@
 {
   lib,
   stdenv,
-  fetchzip,
+  callPackage,
   autoPatchelfHook,
   ...
 }:
-stdenv.mkDerivation rec {
+  let
+    upstream = callPackage ../../internal/prebuilt/libllama-cpu.nix {};
+  in
+stdenv.mkDerivation (finalAttrs: {
   pname = "libllama-cpu";
-  version = "20251109.0";
-
-  src = fetchzip {
-    url = "https://github.com/7ka-Hiira/llama.cpp/releases/download/v${version}/llama-linux-x86_64-cpu-v${version}.tar.gz";
-    hash = "sha256-Hw96OYrd3LoePFhNk3Whk90I0pREx2gpxanIMxo+bHs=";
-    stripRoot = false;
-  };
+  src = upstream;
+  inherit (upstream) version;
 
   nativeBuildInputs = [
     autoPatchelfHook
@@ -35,9 +33,9 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     homepage = "https://github.com/7ka-Hiira/llama.cpp";
-    description = "Llama.cpp libraries (CPU version)";
+    description = "llama.cpp CPU";
     license = licenses.mit;
     maintainers = [];
     platforms = ["x86_64-linux"];
   };
-}
+})
