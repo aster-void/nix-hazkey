@@ -4,62 +4,61 @@
   callPackage,
   autoPatchelfHook,
   libllama,
-}:
-  let
-    upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
-  in
-stdenv.mkDerivation (finalAttrs: {
-  pname = "hazkey-server";
-  src = upstream;
-  inherit (upstream) version;
+}: let
+  upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
+in
+  stdenv.mkDerivation (finalAttrs: {
+    pname = "hazkey-server";
+    src = upstream;
+    inherit (upstream) version;
 
-  nativeBuildInputs = [autoPatchelfHook];
+    nativeBuildInputs = [autoPatchelfHook];
 
-  buildInputs = [
-    stdenv.cc.cc.lib
-    libllama
-  ];
+    buildInputs = [
+      stdenv.cc.cc.lib
+      libllama
+    ];
 
-  dontBuild = true;
+    dontBuild = true;
 
-  patchPhase = ''
-    runHook prePatch
+    patchPhase = ''
+      runHook prePatch
 
-    # Flatten upstream lib dir for consistency
-    mv usr/lib/x86_64-linux-gnu/* usr/lib/
-    rmdir usr/lib/x86_64-linux-gnu
+      # Flatten upstream lib dir for consistency
+      mv usr/lib/x86_64-linux-gnu/* usr/lib/
+      rmdir usr/lib/x86_64-linux-gnu
 
-    runHook postPatch
-  '';
+      runHook postPatch
+    '';
 
-  installPhase = ''
-    runHook preInstall
+    installPhase = ''
+      runHook preInstall
 
-    mkdir -p $out/bin $out/lib/hazkey
+      mkdir -p $out/bin $out/lib/hazkey
 
-    cp -r usr/lib/hazkey/hazkey-server $out/lib/hazkey/
+      cp -r usr/lib/hazkey/hazkey-server $out/lib/hazkey/
 
-    # Install wrapper script
-    cp usr/bin/hazkey-server $out/bin/
+      # Install wrapper script
+      cp usr/bin/hazkey-server $out/bin/
 
-    runHook postInstall
-  '';
+      runHook postInstall
+    '';
 
-  fixupPhase = ''
-    runHook preFixup
+    fixupPhase = ''
+      runHook preFixup
 
-    substituteInPlace $out/bin/hazkey-server \
-      --replace-fail '/usr/lib/x86_64-linux-gnu/hazkey/hazkey-server' "$out/lib/hazkey/hazkey-server"
+      substituteInPlace $out/bin/hazkey-server \
+        --replace-fail '/usr/lib/x86_64-linux-gnu/hazkey/hazkey-server' "$out/lib/hazkey/hazkey-server"
 
-    runHook postFixup
-  '';
+      runHook postFixup
+    '';
 
-  meta = with lib; {
-    homepage = "https://hazkey.hiira.dev/";
-    description = "Hazkey server component for fcitx5-hazkey";
-    license = licenses.mit;
-    maintainers = [];
-    platforms = ["x86_64-linux"];
-    mainProgram = "hazkey-server";
-  };
-})
+    meta = with lib; {
+      homepage = "https://hazkey.hiira.dev/";
+      description = "Hazkey server component for fcitx5-hazkey";
+      license = licenses.mit;
+      maintainers = [];
+      platforms = ["x86_64-linux"];
+      mainProgram = "hazkey-server";
+    };
+  })
