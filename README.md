@@ -116,3 +116,8 @@ in {
   };
 }
 ```
+
+## Contribution
+
+任意の形式のコントリビューションは歓迎です！詳細は [CONTRIBUTION.md](./CONTRIBUTION.md) をご覧ください。
+Issue や Pull Request はお気軽にどうぞ。
