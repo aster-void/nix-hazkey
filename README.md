@@ -50,10 +50,9 @@ B. Manual installation
 
 ```nix
 # configuration.nix / home.nix
-{ config, pkgs, inputs, ... }:
-{
-  # 1. hazkey-server の有効化
-  imports = [ inputs.nix-hazkey.homeModules.hazkey ];
+{pkgs, inputs, ...}: {
+  # 1. hazkey-server の有効化 (上記同様)
+  imports = [ inputs.nix-hazkey.nixosModules.hazkey ];
   services.hazkey = {
     enable = true;
     # 自動インストールの無効化
