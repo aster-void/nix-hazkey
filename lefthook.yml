@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    alejandra:
+      glob: "*.nix"
+      run: alejandra --check {staged_files}
