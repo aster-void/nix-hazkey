@@ -41,26 +41,27 @@ in
 
       # Enable user lingering for systemd user services
       machine.succeed("loginctl enable-linger ${testUser}")
+      machine.wait_for_unit("user@1000.service")
 
       # Check that hazkey-settings is in user's PATH
-      machine.succeed("su - ${testUser} -c 'command -v hazkey-settings'")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/sh -c 'command -v hazkey-settings'")
 
       # Check that fcitx5 addon is installed in user's profile
-      machine.succeed("su - ${testUser} -c 'test -f ~/.nix-profile/lib/fcitx5/libhazkey.so || test -f /etc/profiles/per-user/${testUser}/lib/fcitx5/libhazkey.so'")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/sh -c 'test -f ~/.nix-profile/lib/fcitx5/fcitx5-hazkey.so || test -f /etc/profiles/per-user/${testUser}/lib/fcitx5/fcitx5-hazkey.so'")
 
       # Start and check hazkey-server service
-      machine.succeed("su - ${testUser} -c 'systemctl --user start hazkey-server.service'")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user start hazkey-server.service")
       machine.wait_for_unit("hazkey-server.service", "${testUser}")
 
       # Check that hazkey-server process is running
       machine.succeed("pgrep -u ${testUser} -f hazkey-server")
 
       # Verify environment variables are set correctly
-      machine.succeed("su - ${testUser} -c 'systemctl --user show hazkey-server.service -p Environment' | grep HAZKEY_DICTIONARY")
-      machine.succeed("su - ${testUser} -c 'systemctl --user show hazkey-server.service -p Environment' | grep HAZKEY_ZENZAI_MODEL")
-      machine.succeed("su - ${testUser} -c 'systemctl --user show hazkey-server.service -p Environment' | grep LIBLLAMA_PATH")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep HAZKEY_DICTIONARY")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep HAZKEY_ZENZAI_MODEL")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH")
 
       # Verify that libllama-vulkan is being used (not libllama-cpu)
-      machine.succeed("su - ${testUser} -c 'systemctl --user show hazkey-server.service -p Environment' | grep LIBLLAMA_PATH | grep libllama-vulkan")
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH | grep libllama-vulkan")
     '';
   }
