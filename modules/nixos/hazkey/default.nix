@@ -15,6 +15,13 @@ in {
   config = lib.mkIf cfg.enable (let
     pkg = cfg.server.package.override {libllama = cfg.libllama.package;};
   in {
+    assertions = [
+      {
+        assertion = !cfg.installFcitx5Addon || (config.i18n.inputMethod.enabled or null) == "fcitx5";
+        message = "services.hazkey requires i18n.inputMethod.type = \"fcitx5\" when installFcitx5Addon is true";
+      }
+    ];
+
     environment.systemPackages = lib.optional cfg.installHazkeySettings flake.packages.${system}.hazkey-settings;
     i18n.inputMethod.fcitx5.addons = lib.optional cfg.installFcitx5Addon flake.packages.${system}.fcitx5-hazkey;
 
