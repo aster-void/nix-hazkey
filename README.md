@@ -62,7 +62,7 @@ B. Manual installation
   };
 
   # 2. hazkey-settings のインストール
-  environment.systemPackages = [inputs.nix-hazkey.nixosModules.hazkey-settings];
+  environment.systemPackages = [inputs.nix-hazkey.packages.${system}.hazkey-settings];
 
   # 3. fcitx5 の設定
   i18n.inputMethod = {
