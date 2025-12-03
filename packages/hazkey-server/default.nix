@@ -1,8 +1,7 @@
 {
   pkgs,
-  libllama ? pkgs.callPackage ../libllama-cpu {},
-  ...
+  flake,
 }:
 pkgs.callPackage ./package.nix {
-  inherit libllama;
+  libllama = flake.packages.${pkgs.stdenv.system}.libllama-cpu;
 }
