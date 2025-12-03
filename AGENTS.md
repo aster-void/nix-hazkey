@@ -1,97 +1,53 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# CLAUDE.md / AGENTS.md
 
 ## プロジェクト概要
 
-nix-hazkey は fcitx5-hazkey を NixOS/Home Manager でパッケージングした Nix flake です。
-日本語入力システム hazkey の AI 予測変換機能（Zenzai）を提供します。
+nix-hazkey は fcitx5-hazkey を NixOS/Home Manager 向けにパッケージングした Nix flake です。
+日本語入力システム hazkey と AI 予測変換機能（Zenzai）を提供します。
 
-## アーキテクチャ
+## リポジトリ構成
 
-### パッケージ構成
+```
+nix-hazkey/
+├── packages/          # 個別パッケージ定義
+│   └── <name>/
+│       ├── default.nix   # 引数受け取りと override 対応
+│       └── package.nix   # 実際のパッケージング定義
+├── modules/           # NixOS/Home Manager モジュール
+│   ├── nixos/hazkey/     # NixOS 用モジュール
+│   └── home/hazkey/      # Home Manager 用モジュール
+└── flake.nix          # Flake エントリーポイント
+```
 
-- **hazkey-server**: メインサーバーアプリケーション（systemd ユーザーサービス）
-- **fcitx5-hazkey**: fcitx5 アドオン
-- **hazkey-settings**: 設定 GUI
-- **libllama-cpu / libllama-vulkan**: AI モデル推論バックエンド
-- **zenzai_v2 / zenzai_v3-small / zenzai_v3_1-small / zenzai_v3_1-xsmall**: AI モデルファイル
-- **dictionary**: 辞書ファイル
+## 設計ゴール
 
-### モジュールシステム
-
-`modules/nixos/hazkey/` と `modules/home/hazkey/` は NixOS と Home Manager 用の同じインターフェースを提供します：
-
-- `services.hazkey.enable`: サービス有効化
-- `services.hazkey.libllama.package`: AI バックエンド選択（CPU/Vulkan）
-- `services.hazkey.zenzai.package`: AI モデル選択
-- `services.hazkey.installHazkeySettings`: 設定 GUI のインストール（デフォルト: true）
-- `services.hazkey.installFcitx5Addon`: fcitx5 アドオンのインストール（デフォルト: true）
-
-環境変数でパスを渡す仕組み：
-
-- `HAZKEY_DICTIONARY`: 辞書パス
-- `HAZKEY_ZENZAI_MODEL`: AI モデルパス
-- `LIBLLAMA_PATH`: libllama.so のパス
+1. **モジュラー構成**: サーバー、fcitx5 アドオン、AI バックエンド、モデルファイルを独立したパッケージとして管理
+2. **柔軟な依存関係**: `callPackage` を使うことで、下流での依存関係の上書きが可能
+3. **統一インターフェース**: NixOS と Home Manager で同じ設定インターフェースを提供
 
 ### パッケージ override パターン
 
-hazkey-server は libllama に依存するため、`default.nix` で override を受け入れる：
+依存関係を持つパッケージは `default.nix` で override を受け入れる設計：
 
 ```nix
 {
   pkgs,
-  libllama ? pkgs.callPackage ../libllama-cpu {},
-  ...
+  flake,
 }:
 pkgs.callPackage ./package.nix {
-  inherit libllama;
+  dependency = flake.packages.${system}.dependency;
 }
 ```
 
-モジュールは `cfg.server.package.override {libllama = cfg.libllama.package;}` で実行時に差し替えます。
+下流で `package.override {dependency = dependency-replacement;}` で差し替え可能です。
 
 ## 開発コマンド
 
-### ビルド
-
 ```bash
-# 特定パッケージをビルド
-nix build .#hazkey-server
-nix build .#fcitx5-hazkey
-nix build .#libllama-vulkan
-
-# 全パッケージのビルドチェック
+# ビルド
+nix build .#<package-name>
 nix flake check
-```
 
-### フォーマット
-
-```bash
-# Nix ファイルをフォーマット (alejandra)
+# フォーマット
 nix fmt
 ```
-
-### 開発シェル
-
-```bash
-# devShell に入る（現在は空）
-nix develop
-```
-
-### flake 情報の確認
-
-```bash
-# flake の出力を確認
-nix flake show
-
-# flake メタデータを確認
-nix flake metadata
-```
-
-## パッケージング規約
-
-- 各パッケージは `packages/<name>/default.nix` と `packages/<name>/package.nix` で構成
-- `default.nix`: 引数の受け取りと override 対応
-- `package.nix`: 実際のパッケージング定義
-- Zenzai モデルと dictionary は大容量のため、fetchurl でダウンロード
