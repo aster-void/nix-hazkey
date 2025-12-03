@@ -17,7 +17,7 @@ in {
   in {
     assertions = [
       {
-        assertion = !cfg.installFcitx5Addon || (config.i18n.inputMethod.enabled or null) == "fcitx5";
+        assertion = cfg.installFcitx5Addon -> (config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5");
         message = "services.hazkey requires i18n.inputMethod.type = \"fcitx5\" when installFcitx5Addon is true";
       }
     ];
