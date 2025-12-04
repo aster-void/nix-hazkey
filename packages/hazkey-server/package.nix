@@ -50,6 +50,8 @@ in
       substituteInPlace $out/bin/hazkey-server \
         --replace-fail '/usr/lib/x86_64-linux-gnu/hazkey/hazkey-server' "$out/lib/hazkey/hazkey-server"
 
+      patchShebangs $out/bin/hazkey-server
+
       runHook postFixup
     '';
 

@@ -9,7 +9,7 @@ in
     name = "hazkey-home-manager-basic";
 
     nodes.machine = {
-      imports = [flake.nixosModules.home-manager];
+      imports = [flake.inputs.home-manager.nixosModules.default];
 
       users.users.${testUser} = {
         isNormalUser = true;
