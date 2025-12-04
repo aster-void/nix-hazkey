@@ -3,3 +3,8 @@ pre-commit:
     alejandra:
       glob: "*.nix"
       run: alejandra --check {staged_files}
+
+pre-push:
+  commands:
+    flake-check:
+      run: nix flake check
