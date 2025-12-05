@@ -27,21 +27,33 @@ nix-hazkey/
 2. **柔軟な依存関係**: `callPackage` を使うことで、下流での依存関係の上書きが可能
 3. **統一インターフェース**: NixOS と Home Manager で同じ設定インターフェースを提供
 
-### パッケージ override パターン
+### overridable な依存
 
-依存関係を持つパッケージは `default.nix` で override を受け入れる設計：
+依存関係を持つパッケージは で override を受け入れる設計：
 
 ```nix
+# default.nix
 {
   pkgs,
   flake,
+  system,
+  # dependencies
+  foo ? flake.packages.${system}.foo,
 }:
 pkgs.callPackage ./package.nix {
-  dependency = flake.packages.${system}.dependency;
+  inherit foo;
 }
 ```
 
-下流で `package.override {dependency = dependency-replacement;}` で差し替え可能です。
+```nix
+# package.nix
+{
+  stdenv,
+  foo,
+}: stdenv.mkDerivation { ... }
+```
+
+下流で `package.override {foo = foo_2;}` で差し替え可能です。
 
 ## Assertion ポリシー
 
