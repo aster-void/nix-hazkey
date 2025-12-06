@@ -4,7 +4,6 @@
   config,
   ...
 }: let
-  inherit (pkgs.stdenv) system;
   mkOptions = import ../../../internal/mkOptions.nix;
   cfg = config.services.hazkey;
 in {
@@ -13,17 +12,12 @@ in {
   options.services.hazkey = mkOptions {inherit pkgs flake;};
 
   config = lib.mkIf cfg.enable (let
-    pkg = cfg.server.package.override {libllama = cfg.libllama.package;};
+    common = import ../../../internal/mkConfig.nix {inherit lib pkgs config flake;};
   in {
-    assertions = [
-      {
-        assertion = cfg.installFcitx5Addon -> (config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5");
-        message = "services.hazkey requires i18n.inputMethod.type = \"fcitx5\" when installFcitx5Addon is true";
-      }
-    ];
+    inherit (common) assertions;
 
-    home.packages = lib.optional cfg.installHazkeySettings flake.packages.${system}.hazkey-settings;
-    i18n.inputMethod.fcitx5.addons = lib.optional cfg.installFcitx5Addon flake.packages.${system}.fcitx5-hazkey;
+    home.packages = common.hazkeySettingsPackages;
+    i18n.inputMethod.fcitx5.addons = common.fcitx5Addons;
 
     systemd.user.services.hazkey-server = {
       Unit = {
@@ -32,13 +26,9 @@ in {
         PartOf = ["graphical-session.target"];
       };
       Service = {
-        ExecStart = "${lib.getExe pkg}";
+        ExecStart = "${lib.getExe common.pkg}";
         Restart = "on-failure";
-        Environment = [
-          "HAZKEY_DICTIONARY=${cfg.dictionary.package}${cfg.dictionary.path}"
-          "HAZKEY_ZENZAI_MODEL=${cfg.zenzai.package}${cfg.zenzai.path}"
-          "LIBLLAMA_PATH=${cfg.libllama.package}${cfg.libllama.path}"
-        ];
+        Environment = common.environmentVariables;
       };
       Install = {
         WantedBy = ["graphical-session.target"];
