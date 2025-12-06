@@ -12,12 +12,12 @@ in {
   options.services.hazkey = mkOptions {inherit pkgs flake;};
 
   config = lib.mkIf cfg.enable (let
-    common = import ../../../internal/mkConfig.nix {inherit lib pkgs config flake;};
+    hazkey = import ../../../internal/mkConfig.nix {inherit lib pkgs config flake;};
   in {
-    inherit (common) assertions;
+    inherit (hazkey) assertions;
 
-    home.packages = common.hazkeySettingsPackages;
-    i18n.inputMethod.fcitx5.addons = common.fcitx5Addons;
+    home.packages = hazkey.hazkeySettingsPackages;
+    i18n.inputMethod.fcitx5.addons = hazkey.fcitx5Addons;
 
     systemd.user.services.hazkey-server = {
       Unit = {
@@ -25,14 +25,8 @@ in {
         After = ["graphical-session.target"];
         PartOf = ["graphical-session.target"];
       };
-      Service = {
-        ExecStart = "${lib.getExe common.pkg}";
-        Restart = "on-failure";
-        Environment = common.environmentVariables;
-      };
-      Install = {
-        WantedBy = ["graphical-session.target"];
-      };
+      Service = hazkey.serviceConfig;
+      Install.WantedBy = ["graphical-session.target"];
     };
   });
 }

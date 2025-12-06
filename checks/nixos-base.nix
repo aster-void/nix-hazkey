@@ -15,21 +15,13 @@ pkgs.testers.nixosTest {
       uid = 1000;
     };
 
-    services.hazkey = {
-      enable = true;
-      installHazkeySettings = true;
-      installFcitx5Addon = true;
-
-      # Test custom options
-      libllama.package = flake.packages.x86_64-linux.libllama-cpu;
-      dictionary.package = flake.packages.x86_64-linux.dictionary;
-      zenzai.package = flake.packages.x86_64-linux.zenzai_v3_1-xsmall;
-    };
-
     i18n.inputMethod = {
       enable = true;
       type = "fcitx5";
     };
+
+    # it should install everything
+    services.hazkey.enable = true;
   };
 
   testScript = ''

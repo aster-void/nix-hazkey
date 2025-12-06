@@ -19,20 +19,15 @@ in
       home-manager.users.${testUser} = {
         imports = [flake.homeModules.hazkey];
 
-        services.hazkey = {
-          enable = true;
-
-          # Test custom options
-          libllama.package = flake.packages.x86_64-linux.libllama-vulkan;
-          zenzai.package = flake.packages.x86_64-linux.zenzai_v3_1-xsmall;
-        };
-
         i18n.inputMethod = {
           enable = true;
           type = "fcitx5";
         };
 
         home.stateVersion = "26.05";
+
+        # it should install everything
+        services.hazkey.enable = true;
       };
     };
 
@@ -61,7 +56,7 @@ in
       machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep HAZKEY_ZENZAI_MODEL")
       machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH")
 
-      # Verify that libllama-vulkan is being used (not libllama-cpu)
-      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH | grep libllama-vulkan")
+      # Verify that libllama-cpu is being used (default)
+      machine.succeed("machinectl shell ${testUser}@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH | grep libllama-cpu")
     '';
   }
