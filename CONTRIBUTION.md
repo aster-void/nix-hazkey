@@ -8,7 +8,7 @@ nix-hazkey へのコントリビューションをありがとうございます
 
 - Nix
 - Git
-- Nix Direnv (任意)
+- Nix Direnv
 
 ```sh
 # 事前条件: `nix-command` `flakes` の有効化が必要
@@ -20,7 +20,7 @@ experimental-features = nix-command flakes
 git clone https://github.com/aster-void/nix-hazkey.git
 cd nix-hazkey
 
-direnv allow # 任意
+direnv allow
 ```
 
 ## コマンド
@@ -56,8 +56,10 @@ nix fmt
 
 - NixOS/Home Manager のバージョン
 - `nix --version` の出力
+- 各パッケージのバージョン
+- NixOS/Home Manager の対応部分の設定
 - エラーメッセージ
-- 再現手順
+- 再現手順 (可能なら)
 
 ### 機能リクエスト
 
@@ -71,4 +73,4 @@ nix fmt
 
 ## ライセンス
 
-コントリビューションは Unlicense ライセンスの下で提供されます。
+コントリビューションは Unlicense ライセンスの下で提供されます。ご注意ください。

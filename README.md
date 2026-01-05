@@ -34,15 +34,15 @@ A. All-in-one (推奨)
 {inputs, pkgs, ...}: let
   inherit (pkgs.stdenv) system;
 in {
-  # `i18n.inputMethod` と同じマネージャー (NixOS or Home Manager) で
+  # home-manager の場合は `inputs.nix-hazkey.homeModules.hazkey` を使用
+  imports = [ inputs.nix-hazkey.nixosModules.hazkey ];
+  services.hazkey.enable = true;
+
+  # `i18n.inputMethod` と同じマネージャー (NixOS or Home Manager) である必要があります
   i18n.inputMethod = {
     enable = true;
     type = "fcitx5";
   };
-
-  # home-manager の場合は `inputs.nix-hazkey.homeModules.hazkey` を使用
-  imports = [ inputs.nix-hazkey.nixosModules.hazkey ];
-  services.hazkey.enable = true;
 }
 ```
 
@@ -86,7 +86,7 @@ fcitx5-configtool
 
 ### 4. 設定
 
-hazkey の設定を開きます。 Zenzai の設定がオフになっている場合は、有効化します。
+hazkey の設定を開きます。 Zenzai はデフォルトでオフになっている可能性があるので、必要に応じて有効化します。
 
 ```sh
 hazkey-settings
@@ -118,5 +118,5 @@ in {
 
 ## Contribution
 
-任意の形式のコントリビューションは歓迎です！詳細は [CONTRIBUTION.md](./CONTRIBUTION.md) をご覧ください。
-Issue や Pull Request はお気軽にどうぞ。
+Issue、Pull Request、スター、宣伝などの任意の形式のコントリビューションは歓迎です！
+リポジトリ編集の詳細は [CONTRIBUTION.md](./CONTRIBUTION.md) をご確認ください。
