@@ -7,7 +7,10 @@
 ```nix
 # flake.nix
 {
-  inputs.nix-hazkey.url = "github:aster-void/nix-hazkey";
+  inputs = {
+    nix-hazkey.url = "github:aster-void/nix-hazkey";
+    nix-hazkey.inputs.nixpkgs.follows = "nixpkgs"; # nixpkgs の重複を排除する
+  };
 
   outputs = { self, nixpkgs, ... } @ inputs: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosConfiguration {
