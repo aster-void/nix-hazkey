@@ -14,7 +14,6 @@
 
   services.hazkey = {
     enable = true;
-    libllama.package = flake.packages.x86_64-linux.libllama-vulkan;
     zenzai.package = flake.packages.x86_64-linux.zenzai_v3-small;
   };
 }

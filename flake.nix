@@ -18,14 +18,11 @@
   in {
     packages = forAllSystems (system: let
       pkgs = pkgsFor system;
-      flake = self;
     in {
       dictionary = import ./packages/dictionary {inherit pkgs;};
       fcitx5-hazkey = import ./packages/fcitx5-hazkey {inherit pkgs;};
-      hazkey-server = import ./packages/hazkey-server {inherit pkgs flake;};
+      hazkey-server = import ./packages/hazkey-server {inherit pkgs;};
       hazkey-settings = import ./packages/hazkey-settings {inherit pkgs;};
-      libllama-cpu = import ./packages/libllama-cpu {inherit pkgs;};
-      libllama-vulkan = import ./packages/libllama-vulkan {inherit pkgs;};
       zenzai_v2 = import ./packages/zenzai_v2 {inherit pkgs;};
       zenzai_v3-small = import ./packages/zenzai_v3-small {inherit pkgs;};
       zenzai_v3_1-small = import ./packages/zenzai_v3_1-small {inherit pkgs;};

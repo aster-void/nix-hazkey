@@ -24,14 +24,9 @@ in {
   };
 
   libllama.package = lib.mkOption {
-    type = lib.types.package;
-    default = self.libllama-cpu;
-    description = "Package providing libllama.so";
-  };
-  libllama.path = lib.mkOption {
-    type = lib.types.str;
-    default = "/lib/libllama.so";
-    description = "Path inside the libllama.package that points to libllama.so";
+    type = lib.types.anything;
+    default = null;
+    description = "Deprecated: no-op since 0.2.1. llama.cpp is now bundled in hazkey-server. Use hazkey-settings to configure the backend.";
   };
 
   dictionary.package = lib.mkOption {

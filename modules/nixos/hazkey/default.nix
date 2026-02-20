@@ -14,7 +14,7 @@ in {
   config = lib.mkIf cfg.enable (let
     hazkey = import ../../../internal/mkConfig.nix {inherit lib pkgs config flake;};
   in {
-    inherit (hazkey) assertions;
+    inherit (hazkey) assertions warnings;
 
     environment.systemPackages = hazkey.hazkeySettingsPackages;
     i18n.inputMethod.fcitx5.addons = hazkey.fcitx5Addons;

@@ -3,7 +3,7 @@
   stdenv,
   callPackage,
   autoPatchelfHook,
-  libllama,
+  vulkan-loader,
 }: let
   upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
 in
@@ -16,7 +16,7 @@ in
 
     buildInputs = [
       stdenv.cc.cc.lib
-      libllama
+      vulkan-loader
     ];
 
     dontBuild = true;
@@ -34,9 +34,15 @@ in
     installPhase = ''
       runHook preInstall
 
-      mkdir -p $out/bin $out/lib/hazkey
+      mkdir -p $out/bin $out/lib/hazkey/libllama/backends
 
-      cp -r usr/lib/hazkey/hazkey-server $out/lib/hazkey/
+      cp usr/lib/hazkey/hazkey-server $out/lib/hazkey/
+
+      # Install bundled libllama libraries
+      cp usr/lib/hazkey/libllama/libggml-base.so $out/lib/hazkey/libllama/
+      cp usr/lib/hazkey/libllama/libggml.so $out/lib/hazkey/libllama/
+      cp usr/lib/hazkey/libllama/libllama.so $out/lib/hazkey/libllama/
+      cp usr/lib/hazkey/libllama/backends/*.so $out/lib/hazkey/libllama/backends/
 
       # Install wrapper script
       cp usr/bin/hazkey-server $out/bin/

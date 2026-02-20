@@ -22,8 +22,6 @@ pkgs.testers.nixosTest {
     services.hazkey = {
       enable = true;
 
-      # Test Vulkan backend
-      libllama.package = flake.packages.x86_64-linux.libllama-vulkan;
       zenzai.package = flake.packages.x86_64-linux.zenzai_v2;
     };
   };
@@ -45,9 +43,6 @@ pkgs.testers.nixosTest {
 
     # Check that hazkey-server process is running
     machine.succeed("pgrep -u testuser -f hazkey-server")
-
-    # Verify Vulkan backend is used
-    machine.succeed("machinectl shell testuser@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep LIBLLAMA_PATH | grep libllama-vulkan")
 
     # Verify zenzai_v2 model is used
     machine.succeed("machinectl shell testuser@ /run/current-system/sw/bin/systemctl --user show hazkey-server.service -p Environment | grep HAZKEY_ZENZAI_MODEL | grep zenzai_v2")

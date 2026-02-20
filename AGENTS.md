@@ -23,10 +23,10 @@ nix fmt                      # alejandra によるフォーマット
 
 各パッケージは `default.nix` と `package.nix` のペアで構成される:
 
-- **`default.nix`**: flake レベルの引数（`pkgs`, `flake`, 依存パッケージ）を受け取り、`callPackage ./package.nix` に渡す。下流で `.override {}` による依存差し替えが可能。
+- **`default.nix`**: flake レベルの引数（`pkgs`）を受け取り、`callPackage ./package.nix` に渡す。下流で `.override {}` による依存差し替えが可能。
 - **`package.nix`**: 実際の derivation 定義。nixpkgs の慣習に従った引数のみを受け取る。
 
-例: `hazkey-server/default.nix` は `libllama` をデフォルト引数として受け取り、`package.nix` に渡す。
+0.2.1 以降、llama.cpp ライブラリは hazkey-server に同梱されており（`$out/lib/hazkey/libllama/`）、バックエンドは動的ロード（`GGML_BACKEND_DL`）で選択される。
 
 ### モジュールの共通ロジック
 
@@ -39,7 +39,7 @@ NixOS モジュール (`modules/nixos/`) と Home Manager モジュール (`modu
 
 ### prebuilt バイナリ
 
-`internal/prebuilt/` に上流の `.deb` パッケージを `fetchurl` + `dpkg-deb` で展開する定義がある。`fcitx5-hazkey`, `libllama-cpu`, `libllama-vulkan` が該当。バージョン更新時はここのハッシュを更新する。
+`internal/prebuilt/` に上流の tarball を `fetchzip` で取得する定義がある。`fcitx5-hazkey` が該当。バージョン更新時はここのハッシュを更新する。
 
 ### checks
 

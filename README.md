@@ -104,11 +104,6 @@ in {
   services.hazkey = {
     enable = true;
 
-    # llama backend
-    # - libllama-cpu - CPU [デフォルト]
-    # - libllama-vulkan - GPU (Vulkan)
-    libllama.package = inputs.nix-hazkey.packages.${system}.libllama-vulkan;
-
     # zenzai model
     # - zenzai_v3_1-small [デフォルト]
     # - zenzai_v3_1-xsmall
@@ -118,6 +113,8 @@ in {
   };
 }
 ```
+
+> **Note:** 0.2.1 以降、`libllama.package` オプションは廃止されました。llama.cpp は hazkey-server に同梱されており、バックエンドデバイス（CPU / Vulkan）の選択は `hazkey-settings` の GUI から行えます。
 
 ## Contribution
 
