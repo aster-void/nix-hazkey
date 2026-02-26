@@ -14,6 +14,7 @@
 
   services.hazkey = {
     enable = true;
+    server.package = flake.packages.x86_64-linux.hazkey-server.override {enableVulkan = true;};
     zenzai.package = flake.packages.x86_64-linux.zenzai_v3-small;
   };
 }
