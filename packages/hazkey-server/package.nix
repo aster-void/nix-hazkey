@@ -4,20 +4,24 @@
   callPackage,
   autoPatchelfHook,
   vulkan-loader,
+  makeWrapper,
+  addDriverRunpath,
+  enableVulkan ? false,
 }: let
   upstream = callPackage ../../internal/prebuilt/fcitx5-hazkey.nix {};
 in
-  stdenv.mkDerivation (finalAttrs: {
+  stdenv.mkDerivation {
     pname = "hazkey-server";
     src = upstream;
     inherit (upstream) version;
 
-    nativeBuildInputs = [autoPatchelfHook];
+    nativeBuildInputs =
+      [autoPatchelfHook makeWrapper]
+      ++ lib.optional enableVulkan addDriverRunpath;
 
-    buildInputs = [
-      stdenv.cc.cc.lib
-      vulkan-loader
-    ];
+    buildInputs =
+      [stdenv.cc.cc.lib]
+      ++ lib.optional enableVulkan vulkan-loader;
 
     dontBuild = true;
 
@@ -43,22 +47,25 @@ in
       cp usr/lib/hazkey/libllama/libggml.so $out/lib/hazkey/libllama/
       cp usr/lib/hazkey/libllama/libllama.so $out/lib/hazkey/libllama/
       cp usr/lib/hazkey/libllama/backends/*.so $out/lib/hazkey/libllama/backends/
+      ${lib.optionalString (!enableVulkan) "rm -f $out/lib/hazkey/libllama/backends/libggml-vulkan.so"}
 
-      # Install wrapper script
-      cp usr/bin/hazkey-server $out/bin/
+      makeWrapper $out/lib/hazkey/hazkey-server $out/bin/hazkey-server \
+        --run '
+          # Load user-defined environment variables
+          ENV_FILE="''${XDG_CONFIG_HOME:-$HOME/.config}/hazkey/env"
+          if [ -f "$ENV_FILE" ]; then
+            . "$ENV_FILE"
+          fi
+        '
 
       runHook postInstall
     '';
 
-    fixupPhase = ''
-      runHook preFixup
-
-      substituteInPlace $out/bin/hazkey-server \
-        --replace-fail '/usr/lib/x86_64-linux-gnu/hazkey/hazkey-server' "$out/lib/hazkey/hazkey-server"
-
-      patchShebangs $out/bin/hazkey-server
-
-      runHook postFixup
+    # Vulkan is opt-in (enableVulkan = true) because GPU drivers are linked
+    # against the host glibc, which must match this flake's glibc exactly.
+    # A mismatch causes SIGSEGV. See README for details.
+    postFixup = lib.optionalString enableVulkan ''
+      addDriverRunpath $out/lib/hazkey/libllama/backends/libggml-vulkan.so
     '';
 
     meta = with lib; {
@@ -69,4 +76,4 @@ in
       platforms = ["x86_64-linux"];
       mainProgram = "hazkey-server";
     };
-  })
+  }

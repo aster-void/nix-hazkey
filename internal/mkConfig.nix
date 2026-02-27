@@ -30,24 +30,8 @@ in {
   hazkeySettingsPackages = lib.optional cfg.installHazkeySettings flake.packages.${system}.hazkey-settings;
 
   # Common systemd service configuration (used as serviceConfig in NixOS, Service in Home Manager)
-  serviceConfig = let
-    wrapper = pkgs.writeShellScript "hazkey-server-wrapper" ''
-      # Discover system Vulkan ICD files on non-NixOS (no-op if already set, e.g. on NixOS)
-      if [ -z "''${VK_DRIVER_FILES-}" ]; then
-        VK_DRIVER_FILES=$(${pkgs.findutils}/bin/find /usr/share/vulkan/icd.d /etc/vulkan/icd.d -name '*.json' 2>/dev/null | tr '\n' ':')
-        export VK_DRIVER_FILES
-        # GPU drivers (e.g. NVIDIA) may have dependencies in system lib dirs
-        # that the Nix vulkan-loader can't find without LD_LIBRARY_PATH
-        for dir in /usr/lib64 /usr/lib/x86_64-linux-gnu /usr/lib; do
-          if [ -d "$dir" ]; then
-            export LD_LIBRARY_PATH="''${LD_LIBRARY_PATH:+$LD_LIBRARY_PATH:}$dir"
-          fi
-        done
-      fi
-      exec ${lib.getExe cfg.server.package} "$@"
-    '';
-  in {
-    ExecStart = "${wrapper}";
+  serviceConfig = {
+    ExecStart = "${lib.getExe cfg.server.package}";
     Restart = "on-failure";
     Environment = environmentVariables;
   };

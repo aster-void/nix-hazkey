@@ -116,6 +116,30 @@ in {
 
 > **Note:** 0.2.1 以降、`libllama.package` オプションは廃止されました。llama.cpp は hazkey-server に同梱されており、バックエンドデバイス（CPU / Vulkan）の選択は `hazkey-settings` の GUI から行えます。
 
+## Vulkan バックエンドを使う場合
+
+Vulkan バックエンドはデフォルトで無効です（CPU のみ）。NixOS で有効にするには `hazkey-server` パッケージを override してください:
+
+```nix
+{
+  services.hazkey = {
+    server.package = inputs.nix-hazkey.packages.${system}.hazkey-server.override { enableVulkan = true; };
+  };
+}
+```
+
+Vulkan は GPU ドライバの .so をランタイムでロードするため、チェーン全体の glibc（nixpkgs）が一致する必要があります。一致しない場合 SIGSEGV でクラッシュします。
+
+glibc を一致させるための設定:
+
+- NixOS:
+  - `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
+- Home Manager (NixOS):
+  - `nixpkgs.useGlobalPkgs = true;`
+  - `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
+- Home Manager (non-NixOS):
+  - glibc の不一致が避けられないため、Vulkan は使用できません。
+
 ## Contribution
 
 Issue、Pull Request、スター、宣伝などの任意の形式のコントリビューションは歓迎です！
