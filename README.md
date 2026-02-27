@@ -128,17 +128,25 @@ Vulkan バックエンドはデフォルトで無効です（CPU のみ）。Nix
 }
 ```
 
-Vulkan は GPU ドライバの .so をランタイムでロードするため、チェーン全体の glibc（nixpkgs）が一致する必要があります。一致しない場合 SIGSEGV でクラッシュします。
+Vulkan は GPU ドライバの .so をランタイムでロードするため、`/run/opengl-driver/lib` のドライバが使う glibc と nix-hazkey flake で使われる glibc が一致する必要があります。一致しない場合 SIGSEGV でクラッシュします。
 
 glibc を一致させるための設定:
 
-- NixOS:
-  - `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
-- Home Manager (NixOS):
-  - `nixpkgs.useGlobalPkgs = true;`
-  - `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
-- Home Manager (non-NixOS):
-  - glibc の不一致が避けられないため、Vulkan は使用できません。
+NixOS Installation:
+NixOS nixpkgs
+-> nix-hazkey flake `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
+
+Home Manager Installation (NixOS):
+NixOS nixpkgs
+-> Home Manager `nixpkgs.useGlobalPkgs = true;`
+-> nix-hazkey flake `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
+
+Home Manager Installation (non-NixOS):
+通常、glibc の不一致が避けられないため Vulkan は使用できません。
+[non-nixos-gpu](https://github.com/exzombie/non-nixos-gpu) や Home Manager の `targets.genericLinux.gpu` で `/run/opengl-driver` に nixpkgs ビルドのドライバを配置すれば動作する可能性があります:
+/run/opengl-driver/lib (non-nixos-gpu / `targets.genericLinux.gpu`) <-
+HM nixpkgs
+-> nix-hazkey flake `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
 
 ## Contribution
 
