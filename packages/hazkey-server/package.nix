@@ -61,9 +61,9 @@ in
       runHook postInstall
     '';
 
-    # Vulkan is opt-in (enableVulkan = true) because GPU drivers are linked
-    # against the host glibc, which must match this flake's glibc exactly.
-    # A mismatch causes SIGSEGV. See README for details.
+    # Vulkan is opt-in (enableVulkan = true) because on non-NixOS the distro's
+    # GPU drivers and nixpkgs' glibc coexist in the same process, causing SIGSEGV.
+    # See README for details.
     postFixup = lib.optionalString enableVulkan ''
       addDriverRunpath $out/lib/hazkey/libllama/backends/libggml-vulkan.so
     '';

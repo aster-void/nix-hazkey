@@ -130,11 +130,6 @@ Vulkan バックエンドはデフォルトで無効です（CPU のみ）。Nix
 
 Vulkan は GPU ドライバの .so をランタイムでロードします。NixOS では GPU ドライバも nixpkgs からビルドされるため問題になりませんが、non-NixOS ではディストロの GPU ドライバと nixpkgs の glibc が同一プロセスに混在し、SIGSEGV でクラッシュします。
 
-NixOS の場合、`follows` で nixpkgs を揃えることを推奨します:
-
-- NixOS Installation: `inputs.nix-hazkey.inputs.nixpkgs.follows = "nixpkgs";`
-- Home Manager Installation (NixOS): 上記に加え `nixpkgs.useGlobalPkgs = true;`
-
 non-NixOS の場合、通常 Vulkan は使用できません。[non-nixos-gpu](https://github.com/exzombie/non-nixos-gpu) や Home Manager の `targets.genericLinux.gpu` で `/run/opengl-driver` に nixpkgs ビルドのドライバを配置すれば動作する可能性があります。
 
 ## Contribution
