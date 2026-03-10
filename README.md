@@ -13,7 +13,7 @@
   };
 
   outputs = { self, nixpkgs, ... } @ inputs: {
-    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosConfiguration {
       modules = [
         {
           _module.args = {
