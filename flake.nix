@@ -46,15 +46,21 @@
           // {
             inherit inputs;
           };
-      in {
-        nixos-base = import ./checks/nixos-base.nix {inherit pkgs flake;};
-        nixos-cpu = import ./checks/nixos-cpu.nix {inherit pkgs flake;};
-        nixos-vulkan = import ./checks/nixos-vulkan.nix {inherit pkgs flake;};
-        nixos-minimal = import ./checks/nixos-minimal.nix {inherit pkgs flake;};
-        home-manager-basic = import ./checks/home-manager-basic.nix {inherit pkgs flake;};
-        home-manager-vulkan = import ./checks/home-manager-vulkan.nix {inherit pkgs flake;};
-        cross-nixos-hm = import ./checks/cross-nixos-hm.nix {inherit pkgs flake;};
-      }
+        packageChecks =
+          nixpkgs.lib.mapAttrs' (name: pkg: nixpkgs.lib.nameValuePair "package-${name}" pkg)
+          (nixpkgs.lib.filterAttrs (_: pkg: nixpkgs.lib.meta.availableOn pkgs.stdenv.hostPlatform pkg)
+            self.packages.${system});
+      in
+        packageChecks
+        // {
+          nixos-base = import ./checks/nixos-base.nix {inherit pkgs flake;};
+          nixos-cpu = import ./checks/nixos-cpu.nix {inherit pkgs flake;};
+          nixos-vulkan = import ./checks/nixos-vulkan.nix {inherit pkgs flake;};
+          nixos-minimal = import ./checks/nixos-minimal.nix {inherit pkgs flake;};
+          home-manager-basic = import ./checks/home-manager-basic.nix {inherit pkgs flake;};
+          home-manager-vulkan = import ./checks/home-manager-vulkan.nix {inherit pkgs flake;};
+          cross-nixos-hm = import ./checks/cross-nixos-hm.nix {inherit pkgs flake;};
+        }
     );
 
     devShells = forAllSystems (system: {
