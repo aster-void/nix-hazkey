@@ -1,5 +1,13 @@
 # nix-hazkey
 
+## Usecases
+
+| OS                                  | モジュール              |
+| ----------------------------------- | ----------------------- |
+| NixOS                               | NixOS モジュール        |
+| NixOS                               | Home Manager モジュール |
+| non-NixOS (Ubuntu, Arch, Fedora 等) | Home Manager モジュール |
+
 ## Installation
 
 ### 1. flake を `inputs` に追加
