@@ -9,9 +9,9 @@ stdenv.mkDerivation {
   version = "3.0";
 
   src = fetchurl {
-    # the hash after /resolve/ is commit ID - derive from main branch (we don't just use `main` for better reproducibility)
-    url = "https://huggingface.co/Miwa-Keita/zenz-v3-2-small-gguf/resolve/d48369e21adb9f49903eb7c54be1a1d9723eb805/ggml-model-Q5_K_M.gguf";
-    hash = "";
+    # the hash after /resolve/ is a commit ID - why is it failing to download?
+    url = "https://huggingface.co/Miwa-Keita/zenz-v3.2-small-gguf/resolve/c67e03e07d215c869f591b274c1631170d3e11fe/ggml-model-Q5_K_M.gguf";
+    hash = "sha256-KcIj1MIzJ7gP0T67WrJVUFekYxeZfV2jkVhP++8NtnM=";
   };
 
   dontUnpack = true;
