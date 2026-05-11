@@ -27,7 +27,7 @@ stdenv.mkDerivation {
   meta = with lib; {
     homepage = "https://huggingface.co/Miwa-Keita/zenz-v3.1-small-gguf";
     description = "Zenzai v3.1 small";
-    license = licenses.mit;
+    license = licenses.cc-by-sa-40;
     maintainers = [];
     platforms = platforms.all;
   };

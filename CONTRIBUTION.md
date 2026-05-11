@@ -41,7 +41,7 @@ nix flake check
 
 ```sh
 # フォーマット実行
-nix fmt
+nix fmt .
 ```
 
 コミット前に必ずフォーマットを実行してください。

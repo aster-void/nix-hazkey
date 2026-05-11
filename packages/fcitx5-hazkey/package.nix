@@ -15,7 +15,10 @@ in
 
     nativeBuildInputs = [autoPatchelfHook];
 
-    buildInputs = [fcitx5 stdenv.cc.cc.lib];
+    buildInputs = [
+      fcitx5
+      stdenv.cc.cc.lib
+    ];
 
     dontBuild = true;
 

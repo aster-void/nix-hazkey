@@ -20,14 +20,18 @@ in {
 
   assertions = [
     {
-      assertion = cfg.installFcitx5Addon -> (config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5");
+      assertion =
+        cfg.installFcitx5Addon
+        -> (config.i18n.inputMethod.enable && config.i18n.inputMethod.type == "fcitx5");
       message = "services.hazkey requires i18n.inputMethod.type = \"fcitx5\" when installFcitx5Addon is true";
     }
   ];
 
   fcitx5Addons = lib.optional cfg.installFcitx5Addon flake.packages.${system}.fcitx5-hazkey;
 
-  hazkeySettingsPackages = lib.optional cfg.installHazkeySettings flake.packages.${system}.hazkey-settings;
+  hazkeySettingsPackages =
+    lib.optional cfg.installHazkeySettings
+    flake.packages.${system}.hazkey-settings;
 
   # Common systemd service configuration (used as serviceConfig in NixOS, Service in Home Manager)
   serviceConfig = {

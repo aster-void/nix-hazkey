@@ -13,9 +13,16 @@ in
     src = upstream;
     inherit (upstream) version;
 
-    nativeBuildInputs = [autoPatchelfHook qt6.wrapQtAppsHook];
+    nativeBuildInputs = [
+      autoPatchelfHook
+      qt6.wrapQtAppsHook
+    ];
 
-    buildInputs = [stdenv.cc.cc.lib qt6.qtbase qt6.qtwayland];
+    buildInputs = [
+      stdenv.cc.cc.lib
+      qt6.qtbase
+      qt6.qtwayland
+    ];
 
     dontBuild = true;
 

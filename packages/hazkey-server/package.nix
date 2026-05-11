@@ -16,12 +16,13 @@ in
     inherit (upstream) version;
 
     nativeBuildInputs =
-      [autoPatchelfHook makeWrapper]
+      [
+        autoPatchelfHook
+        makeWrapper
+      ]
       ++ lib.optional enableVulkan addDriverRunpath;
 
-    buildInputs =
-      [stdenv.cc.cc.lib]
-      ++ lib.optional enableVulkan vulkan-loader;
+    buildInputs = [stdenv.cc.cc.lib] ++ lib.optional enableVulkan vulkan-loader;
 
     dontBuild = true;
 
