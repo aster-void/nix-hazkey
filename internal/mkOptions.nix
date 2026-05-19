@@ -23,12 +23,6 @@ in {
     description = "Package providing the hazkey-server binary";
   };
 
-  libllama.package = lib.mkOption {
-    type = lib.types.anything;
-    default = null;
-    description = "Deprecated: no-op since 0.2.1. llama.cpp is now bundled in hazkey-server. Use hazkey-settings to configure the backend.";
-  };
-
   dictionary.package = lib.mkOption {
     type = lib.types.package;
     default = self.dictionary;
@@ -42,7 +36,7 @@ in {
 
   zenzai.package = lib.mkOption {
     type = lib.types.package;
-    default = self.zenzai_v3_1-small;
+    default = self.zenzai_v3_2-small;
     description = "Package providing zenzai.gguf";
   };
   zenzai.path = lib.mkOption {
