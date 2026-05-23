@@ -14,10 +14,7 @@
     "GGML_BACKEND_DIR=${cfg.server.package}/lib/hazkey/libllama/backends/"
   ];
 in {
-  warnings =
-    lib.optional (cfg.libllama.package != null)
-    "services.hazkey.libllama.package is deprecated and has no effect since 0.2.1. llama.cpp is now bundled in hazkey-server. Use hazkey-settings to configure the backend device.";
-
+  
   assertions = [
     {
       assertion =
