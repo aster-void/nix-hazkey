@@ -14,7 +14,6 @@
     "GGML_BACKEND_DIR=${cfg.server.package}/lib/hazkey/libllama/backends/"
   ];
 in {
-  
   assertions = [
     {
       assertion =

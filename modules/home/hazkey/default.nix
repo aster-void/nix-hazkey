@@ -22,7 +22,7 @@ in {
           ;
       };
     in {
-      inherit (hazkey) assertions warnings;
+      inherit (hazkey) assertions;
 
       home.packages = hazkey.hazkeySettingsPackages;
       i18n.inputMethod.fcitx5.addons = hazkey.fcitx5Addons;
