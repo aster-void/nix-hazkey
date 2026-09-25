@@ -52,7 +52,6 @@ NixOS モジュール (`modules/nixos/`) と Home Manager モジュール (`modu
 
 ## 注意点
 
-- `main` ブランチにコミットを作成しても、ブランチポリシーによりプッシュすることはできません。
 - 対応プラットフォーム: `x86_64-linux`, `aarch64-linux`
 - フォーマッタは `alejandra`（`nix fmt` で実行）
 - ライセンス: Unlicense
