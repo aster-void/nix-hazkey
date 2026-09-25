@@ -5,8 +5,8 @@
   ...
 }:
 stdenv.mkDerivation {
-  pname = "zenzai_v3-small";
-  version = "3.0";
+  pname = "zenzai_v3_2-small";
+  version = "3.2";
 
   src = fetchurl {
     # the hash after /resolve/ is a commit ID - why is it failing to download?
@@ -24,7 +24,7 @@ stdenv.mkDerivation {
   '';
 
   meta = with lib; {
-    homepage = "https://huggingface.co/Miwa-Keita/zenz-v3-2-small-gguf";
+    homepage = "https://huggingface.co/Miwa-Keita/zenz-v3.2-small-gguf";
     description = "Zenzai v3.2 small";
     license = licenses.asl20;
     maintainers = [];
